@@ -34,10 +34,7 @@ export PATH=$PATH:/path/to/depot_tools
 
 fetch --nohooks webrtc_ios
 
-#To List available branches
 git branch -r
-
-#To checkout specific branch
 git checkout branch-heads/BRANCH
 
 gclient sync
