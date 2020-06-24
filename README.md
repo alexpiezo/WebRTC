@@ -1,6 +1,6 @@
 # WebRTC Universial Binary
 
-This is WebRTC framework in xcframework format for iOS and macOS.
+This is WebRTC framework in XCFramework format for iOS and macOS.
 
 Google provides the official builds for iOS, if all you need is iOS build, get it from Google:
 
@@ -11,7 +11,7 @@ Google provides the official builds for iOS, if all you need is iOS build, get i
 
 ### Manual 
 
-Download the xcframework at [Release](https://github.com/alexpiezo/WebRTC/releases) and drag it into your Xcode project.
+Download the XCFramework at [Release](https://github.com/alexpiezo/WebRTC/releases) and drag it into your Xcode project.
 
 ### Swift Package Manager 
 
@@ -25,3 +25,49 @@ dependencies: [
 
 ### Building your own manually
 
+
+#### Download webrtc
+
+```shellscript
+git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
+export PATH=$PATH:/path/to/depot_tools
+
+fetch --nohooks webrtc_ios
+
+#To List available branches
+git branch -r
+
+#To checkout specific branch
+git checkout branch-heads/BRANCH
+
+gclient sync
+```
+
+#### Generate iOS and macOS targets
+
+```shellscript
+gn gen out/mac_x64 --args='target_os="mac" target_cpu="x64" is_component_build=false is_debug=false rtc_libvpx_build_vp9=false enable_stripping=true rtc_enable_protobuf=false'
+
+gn gen ./out/ios_arm64 --args='target_os="ios" target_cpu="arm64" is_component_build=false use_xcode_clang=true is_debug=false  ios_deployment_target="10.0" rtc_libvpx_build_vp9=false use_goma=false ios_enable_code_signing=false enable_stripping=true rtc_enable_protobuf=false enable_ios_bitcode=false'
+
+gn gen out/ios_x64 --args='target_os="ios" target_cpu="x64" is_component_build=false use_xcode_clang=true is_debug=true ios_deployment_target="10.0" rtc_libvpx_build_vp9=false use_goma=false ios_enable_code_signing=false enable_stripping=true rtc_enable_protobuf=false enable_ios_bitcode=false'
+```
+
+#### Build the targets
+
+```shellscript
+ninja -C out/mac_x64 sdk:mac_framework_objc
+ninja -C out/ios_arm64 sdk:framework_objc
+ninja -C out/ios_x64 sdk:framework_objc
+```
+
+#### Generate XCFramework
+
+```shellscript
+xcodebuild -create-xcframework \
+	-framework ./out/ios_arm64/WebRTC.framework \
+	-framework ./out/ios_x64/WebRTC.framework \
+	-framework ./out/mac_x64/WebRTC.framework \
+	-output ./out/WebRTC.xcframework
+
+```
