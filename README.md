@@ -19,7 +19,7 @@ Requires Swift 5.3 / Xcode 12+.
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/alexpiezo/WebRTC.git", .upToNextMajor(from: "1.1.29507"))
+    .package(url: "https://github.com/alexpiezo/WebRTC.git", .upToNextMajor(from: "1.1.31567"))
 ]
 ```
 
