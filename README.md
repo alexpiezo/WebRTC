@@ -7,8 +7,6 @@ Google provides the official builds for iOS, if all you need is iOS build, get i
 - https://cocoapods.org/pods/GoogleWebRTC
 - https://webrtc.github.io/webrtc-org/native-code/io/
 
-DON'T use for production! https://bugs.swift.org/browse/SR-13345
-
 ## Installation
 
 ### Manual 
@@ -19,14 +17,26 @@ Download the XCFramework at [Release](https://github.com/alexpiezo/WebRTC/releas
 
 Requires Swift 5.3 / Xcode 12+.
 
+Add WebRTC repository https://github.com/alexpiezo/WebRTC.git via Swift Package Manager  
+
+Alternatively, to integrate via a Package.swift manifest instead of Xcode, you can add WebRTC to your dependencies array of your package with
+
 ```swift
 dependencies: [
     .package(url: "https://github.com/alexpiezo/WebRTC.git", .upToNextMajor(from: "1.1.31567"))
 ]
 ```
 
-### Building your own manually
+Then add a new run script phase script to your app’s target
 
+```shellscript
+find "${CODESIGNING_FOLDER_PATH}" -name '*.framework' -print0 | while read -d $'\0' framework 
+do 
+    codesign --force --deep --sign "${EXPANDED_CODE_SIGN_IDENTITY}" --preserve-metadata=identifier,entitlements --timestamp=none "${framework}" 
+done
+```
+
+### Building your own manually
 
 #### Download webrtc
 
