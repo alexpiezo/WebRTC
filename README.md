@@ -11,19 +11,19 @@ Google provides the official builds for iOS, if all you need is iOS build, get i
 
 ### Manual 
 
-Download the XCFramework at [Release](https://github.com/m0rb1u5/WebRTC/releases) and drag it into your Xcode project.
+Download the XCFramework at [Release](https://github.com/alexpiezo/WebRTC/releases) and drag it into your Xcode project.
 
 ### Swift Package Manager 
 
 Requires Swift 5.3 / Xcode 12+.
 
-Add WebRTC repository https://github.com/m0rb1u5/WebRTC.git via Swift Package Manager  
+Add WebRTC repository https://github.com/alexpiezo/WebRTC.git via Swift Package Manager  
 
 Alternatively, to integrate via a Package.swift manifest instead of Xcode, you can add WebRTC to your dependencies array of your package with
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/m0rb1u5/WebRTC.git", .upToNextMajor(from: "1.1.4"))
+    .package(url: "https://github.com/alexpiezo/WebRTC.git", .upToNextMajor(from: "1.1.4"))
 ]
 ```
 
