@@ -5,3 +5,12 @@
 xcuserdata/
 .swiftpm
 *.xcframework.zip
+0
+.gclient
+.gclient_entries
+.cipd
+.vscode
+out
+depot_tools
+src
+token.txt

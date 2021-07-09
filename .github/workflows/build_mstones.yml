@@ -1,0 +1,198 @@
+name: Release WebRTC [86, 87, 88, 89, 90, 91]
+
+on:
+  workflow_dispatch:    
+
+env:  
+  current_release_milestone:
+  current_release_branch:
+  next_release_milestone:
+  next_release_branch:
+  should_build: ${{ false }}
+  output_name:
+  next_release_tag:
+  next_release_name:
+
+  output_dir: "./out"
+
+  IOS_32_BIT: ${{ true }}
+  ENABLE_IOS_BITCODE: ${{ true }}
+  
+jobs:
+  
+  build:
+    runs-on: macos-latest
+
+    strategy:
+      matrix:
+        milestone: [86, 87, 88, 89, 90, 91]
+
+    steps:      
+      - uses: actions/checkout@v2
+
+      - name: GH Auth
+        run: |
+          echo ${{ secrets.GITHUB_TOKEN }} >> token.txt
+          gh auth login --with-token < token.txt
+          rm token.txt          
+      
+      - name: Getting WebRTC release        
+        run: |
+          IFS=$'.' current_release_tag=($(gh api repos/${{ github.repository }}/releases | jq -r ".[0].tag_name"))          
+          milestones=$( curl -sL "https://chromiumdash.appspot.com/fetch_milestones?mstone=${{ matrix.milestone }}")         
+          echo "current_release_milestone=${current_release_tag[0]:-0}" >> $GITHUB_ENV
+          echo "current_release_branch=${current_release_tag[1]:-0}" >> $GITHUB_ENV
+          echo "next_release_milestone=$(echo $milestones  | jq -r ".[0].milestone")" >> $GITHUB_ENV
+          echo "next_release_branch=$(echo $milestones  | jq -r ".[0].webrtc_branch")" >> $GITHUB_ENV
+          
+          
+      - name: Setup enviroment
+        run: |                    
+          echo "should_build=${{ env.next_release_branch > env.current_release_branch }}" >> $GITHUB_ENV    
+          echo "output_name=WebRTC-M${{ env.next_release_milestone }}.xcframework.zip" >> $GITHUB_ENV    
+          echo "next_release_name=M${{ env.next_release_milestone }}" >> $GITHUB_ENV    
+          echo "next_release_tag=${{ env.next_release_milestone }}.${{ env.next_release_branch }}.0" >> $GITHUB_ENV    
+          
+
+      - name: Create branch
+        if: env.should_build == 'true'
+        run: |
+          git config --local user.email "${{ github.actor }}[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"                    
+
+          git branch M${{ env.next_release_milestone }} -f
+          git checkout M${{ env.next_release_milestone }}
+
+          remote_repo="https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
+
+          git push "${remote_repo}" "M${{ env.next_release_milestone }}" --force --follow-tags --tags
+
+          mkdir "${{ env.output_dir }}"
+
+      
+      - name: Checkout WebRTC
+        if: env.should_build == 'true'
+        run: | 
+          source "${GITHUB_WORKSPACE}/scripts/checkout_webrtc.sh";                     
+          echo "${PATH}" >> $GITHUB_PATH
+          echo ::set-output name=should_build::false
+        env:
+          WEBRTC_BRANCH: ${{ env.next_release_branch  }}
+         
+      - name: Build ios x86 simulator
+        if: env.should_build == 'true' && env.IOS_32_BIT == 'true'
+        run: |
+          cd src
+          source "${GITHUB_WORKSPACE}/scripts/build_webrtc.sh" 
+        env:
+          TARGET_OS: "ios"
+          TARGET_CPU: "x86"
+          ENVIROMENT: "simulator"
+
+      - name: Build ios x64 simulator
+        if: env.should_build == 'true'
+        run: |
+          cd src
+          source "${GITHUB_WORKSPACE}/scripts/build_webrtc.sh" 
+        env:
+          TARGET_OS: "ios"
+          TARGET_CPU: "x64"
+          ENVIROMENT: "simulator"
+
+      - name: Build ios arm64 simulator
+        if: env.should_build == 'true'
+        run: |
+          cd src
+          source "${GITHUB_WORKSPACE}/scripts/build_webrtc.sh" 
+        env:
+          TARGET_OS: "ios"
+          TARGET_CPU: "arm64"
+          ENVIROMENT: "simulator"
+
+      - name: Build ios arm device
+        if: env.should_build == 'true' && env.IOS_32_BIT == 'true'
+        run: |
+          cd src
+          source "${GITHUB_WORKSPACE}/scripts/build_webrtc.sh" 
+        env:
+          TARGET_OS: "ios"
+          TARGET_CPU: "arm"
+          ENVIROMENT: "device"
+    
+      - name: Build ios arm64 device
+        if: env.should_build == 'true'
+        run: |
+          cd src
+          source "${GITHUB_WORKSPACE}/scripts/build_webrtc.sh" 
+        env:
+          TARGET_OS: "ios"
+          TARGET_CPU: "arm64"
+          ENVIROMENT: "device"
+
+      - name: Build mac x64
+        if: env.should_build == 'true'
+        run: |
+          cd src
+          source "${GITHUB_WORKSPACE}/scripts/build_webrtc.sh" 
+        env:
+          TARGET_OS: "mac"
+          TARGET_CPU: "x64"
+      
+      - name: Build mac arm64
+        if: env.should_build == 'true'
+        run: |
+          cd src
+          source "${GITHUB_WORKSPACE}/scripts/build_webrtc.sh" 
+        env:
+          TARGET_OS: "mac"
+          TARGET_CPU: "arm64"
+      
+      - name: Create XCFramefork
+        id: create_xcframework
+        if: env.should_build == 'true'
+        run: |
+          source "${GITHUB_WORKSPACE}/scripts/create_xcframework.sh" 
+          cd "${{ env.output_dir }}"          
+          zip --symlinks -r ${{ env.output_name }} WebRTC.xcframework/
+          CHECKSUM=$(shasum -a 256 ${{ env.output_name }} | awk '{ print $1 }')
+
+          echo ::set-output name=checksum::$CHECKSUM
+        env:
+          XCFRAMEWORK_NAME: "WebRTC"
+          PLISTBUDDY: "/usr/libexec/PlistBuddy"          
+
+      # - name: Test Create XCFramefork
+      #   id: create_xcframework
+      #   if: env.should_build == 'true'
+      #   run: |
+      #     echo "Test" >> "${{ env.output_dir }}/${{ env.output_name }}"
+      #     CHECKSUM=$(shasum -a 256 "${{ env.output_dir }}/${{ env.output_name }}" | awk '{ print $1 }')
+      #     echo ${CHECKSUM}
+      #     echo ::set-output name=checksum::$CHECKSUM
+      
+      - name: Update Package.swift
+        if: env.should_build == 'true'
+        run: |          
+          sed -i '' -E 's,url:.*WebRTC-M[0-9]+.xcframework.zip,url: "https://github.com/${{ github.repository }}/releases/download/${{ env.next_release_tag }}/${{ env.output_name }},g' Package.swift 
+          sed -i '' -E 's/checksum: .*/checksum: "${{ steps.create_xcframework.outputs.checksum }}"/g' Package.swift        
+      
+      - name: commit and push
+        if: env.should_build == 'true'
+        run: |          
+          git add Package.swift
+          git commit -m "Update for release ${{ env.next_release_name }}"          
+          git tag "${{ env.next_release_tag }}"
+          
+          remote_repo="https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
+
+          git push "${remote_repo}" "M${{ env.next_release_milestone }}" --force --follow-tags --tags
+
+      - name: Create prerelease
+        if: env.should_build == 'true'
+        run: |
+          echo "Release notes: N/A\nWebRTC Branch: [branch-heads/${{ env.next_release_branch }}](https://chromium.googlesource.com/external/webrtc/+log/branch-heads/${{ env.next_release_branch }})" >> changelog.md
+          gh release create "${{ env.next_release_tag }}" -d -t "M${{ env.next_release_milestone }}"  -F changelog.md "${{ env.output_dir }}/${{ env.output_name }}"
+
+      - name: Open PR
+        if: env.should_build == 'true'
+        run: gh pr create -f --head "M${{ env.next_release_milestone }}"
