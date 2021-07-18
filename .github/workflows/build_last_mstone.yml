@@ -39,7 +39,7 @@ jobs:
       - name: Getting WebRTC release        
         run: |
           IFS=$'.' current_release_tag=($(gh api repos/${{ github.repository }}/releases | jq -r ".[0].tag_name"))          
-          milestones=$( curl -sL "https://chromiumdash.appspot.com/fetch_milestones")         
+          milestones=$( curl -sL "https://chromiumdash.appspot.com/fetch_milestones" | jq -r 'map(select(.schedule_phase | . != null) | select(.schedule_phase=="stable" or .schedule_phase=="stable_cut"))' )         
           echo "current_release_milestone=${current_release_tag[0]:-0}" >> $GITHUB_ENV
           echo "current_release_branch=${current_release_tag[1]:-0}" >> $GITHUB_ENV
           echo "next_release_milestone=$(echo $milestones  | jq -r ".[0].milestone")" >> $GITHUB_ENV
