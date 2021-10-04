@@ -23,6 +23,8 @@ source $CHECKOUT_SCRIPT
 
 cd src
 
+sed -i '' 's/-ffile-compilation-dir/-fdebug-compilation-dir/g' ./build/config/compiler/BUILD.gn
+
 TARGET_OS="ios"
 TARGET_CPU="x86"
 ENVIROMENT="simulator"
