@@ -78,6 +78,11 @@ jobs:
           echo ::set-output name=should_build::false
         env:
           WEBRTC_BRANCH: ${{ env.next_release_branch  }}
+
+      - name: Path for M94
+        run: |
+          cd src
+          sed -i '' 's/-ffile-compilation-dir/-fdebug-compilation-dir/g' ./build/config/compiler/BUILD.gn
          
       - name: Build ios x86 simulator
         if: env.should_build == 'true' && env.IOS_32_BIT == 'true'
