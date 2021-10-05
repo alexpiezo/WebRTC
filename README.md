@@ -1,4 +1,4 @@
-# WebRTC Universial Binary
+# WebRTC Universal Binary
 
 This is WebRTC framework in XCFramework format for iOS and macOS.
 
