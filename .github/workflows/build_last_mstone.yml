@@ -26,7 +26,7 @@ env:
 jobs:
   
   build:
-    runs-on: macos-11
+    runs-on: macos-latest
 
     steps:      
       - uses: actions/checkout@v2
@@ -81,6 +81,10 @@ jobs:
       - name: Patch for M94
         run: |          
           sed -i '' 's/-ffile-compilation-dir/-fdebug-compilation-dir/g' "${GITHUB_WORKSPACE}/src/build/config/compiler/BUILD.gn"
+
+      - name: Patch for M95
+        run :
+          sed -i '' 's/cflags += \[ "-gdwarf-aranges" \]/# cflags += \[ "-gdwarf-aranges" \]/g' "${GITHUB_WORKSPACE}/src/build/config/compiler/BUILD.gn"
          
       - name: Build ios x86 simulator
         if: env.should_build == 'true' && env.IOS_32_BIT == 'true'
